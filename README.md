@@ -370,6 +370,297 @@ The project includes comprehensive tests covering:
 
 **Test Coverage**: >85% of source code
 
+### Running Tests
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage report
+pytest tests/ --cov=src --cov-report=html
+
+# View coverage report
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
+start htmlcov/index.html  # Windows
+```
+
+See `docs/TESTING.md` for comprehensive testing documentation including edge cases and coverage details.
+
+---
+
+## ⚙️ Configuration
+
+The project uses YAML configuration files for all hyperparameters and settings.
+
+### Configuration Files
+
+- **`config/default.yaml`**: Default configuration for all parameters
+- **`config/experiment.yaml`**: Experimental configurations for testing
+- **`.env.example`**: Template for environment variables (not tracked in git)
+
+### Key Configuration Parameters
+
+```yaml
+# Model Architecture
+model:
+  hidden_size: 64
+  num_layers: 2
+  dropout: 0.2
+
+# Training Hyperparameters
+training:
+  num_epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+
+# Data Generation
+data:
+  train_seed: 11
+  test_seed: 42
+  frequencies: [1.0, 3.0, 5.0, 7.0]
+```
+
+### Using Custom Configuration
+
+```python
+from src.config import load_config
+
+# Load default config
+config = load_config()
+
+# Load with experimental overrides
+config = load_config(merge_experiment=True)
+
+# Access parameters
+hidden_size = config.get('model.hidden_size')
+learning_rate = config.get('training.learning_rate')
+```
+
+For complete configuration options, see `config/default.yaml` and the Configuration API in `docs/ARCHITECTURE.md`.
+
+---
+
+## 🔧 Troubleshooting
+
+### Installation Issues
+
+#### Problem: PyTorch installation fails
+**Solution:**
+```bash
+# Install PyTorch separately first (CPU version)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Then install remaining requirements
+pip install -r requirements.txt
+```
+
+#### Problem: Python version mismatch
+**Solution:**
+```bash
+# Check Python version (requires 3.8+)
+python --version
+
+# Create virtual environment with specific version
+python3.8 -m venv venv
+source venv/bin/activate
+```
+
+#### Problem: Permission denied on venv creation
+**Solution:**
+```bash
+# On Unix/Mac, use sudo if needed
+sudo python -m venv venv
+
+# Or install in user directory
+python -m venv ~/lstm-venv
+source ~/lstm-venv/bin/activate
+```
+
+### Training Issues
+
+#### Problem: CUDA out of memory
+**Solution:**
+```bash
+# Force CPU usage
+export CUDA_VISIBLE_DEVICES=""
+python train.py
+
+# Or reduce batch size in config/default.yaml
+# training:
+#   batch_size: 16  # Instead of 32
+```
+
+#### Problem: Training very slow on CPU
+**Solution:**
+- Reduce `num_epochs` to 50 for faster iteration
+- Reduce `batch_size` to 16 (faster per-epoch, more epochs needed)
+- Use smaller `hidden_size` (32 instead of 64)
+- Consider cloud GPU (Google Colab, AWS, etc.)
+
+#### Problem: Loss not decreasing
+**Solution:**
+```bash
+# Check learning rate (may be too high or too low)
+# In config/default.yaml, try:
+# training:
+#   learning_rate: 0.0005  # If oscillating
+#   learning_rate: 0.002   # If too slow
+```
+
+#### Problem: Training diverges (loss → NaN)
+**Solution:**
+- Reduce learning rate to 0.0001
+- Check for data issues (run `pytest tests/test_data_generator.py`)
+- Enable gradient clipping (already enabled by default)
+
+### Testing Issues
+
+#### Problem: Tests fail with "command not found: pytest"
+**Solution:**
+```bash
+# Ensure virtual environment is activated
+source venv/bin/activate  # Unix/Mac
+venv\Scripts\activate     # Windows
+
+# Install pytest
+pip install pytest pytest-cov
+```
+
+#### Problem: Tests pass but coverage below 85%
+**Solution:**
+```bash
+# Generate detailed coverage report
+pytest tests/ --cov=src --cov-report=term-missing
+
+# Check which lines are not covered
+# Add tests for uncovered code paths
+```
+
+#### Problem: Import errors during testing
+**Solution:**
+```bash
+# Ensure you're in project root directory
+cd /path/to/lstm-noisy-signal-filter
+
+# Run tests from root
+pytest tests/
+
+# Or use absolute imports
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+```
+
+### Visualization Issues
+
+#### Problem: Plots not generated
+**Solution:**
+```bash
+# Check matplotlib backend
+import matplotlib
+print(matplotlib.get_backend())
+
+# If needed, set backend
+export MPLBACKEND=Agg  # For non-GUI environments
+python train.py
+```
+
+#### Problem: Low resolution visualizations
+**Solution:**
+- Edit `config/default.yaml`:
+```yaml
+visualization:
+  dpi: 600  # Increase from 300 for higher quality
+```
+
+#### Problem: Missing fonts in plots
+**Solution:**
+```bash
+# Install additional fonts (Ubuntu/Debian)
+sudo apt-get install fonts-liberation
+
+# Clear matplotlib cache
+rm -rf ~/.cache/matplotlib
+```
+
+### Data Issues
+
+#### Problem: Different results with same seed
+**Solution:**
+- Ensure PyTorch deterministic mode:
+```python
+import torch
+torch.use_deterministic_algorithms(True)
+```
+- Check NumPy version compatibility
+- Verify no CUDA randomness (use CPU for reproducibility)
+
+#### Problem: Dataset files not found
+**Solution:**
+```bash
+# Datasets are generated on first run
+# If missing, regenerate:
+python -c "from src.data.generator import create_train_test_datasets; create_train_test_datasets()"
+```
+
+### Performance Issues
+
+#### Problem: Model save/load errors
+**Solution:**
+```bash
+# Check file permissions
+ls -l outputs/models/
+
+# Ensure directory exists
+mkdir -p outputs/models
+
+# Try absolute path
+from pathlib import Path
+model_path = Path("/absolute/path/to/model.pth")
+```
+
+#### Problem: Results not matching documentation
+**Solution:**
+- Verify using same seeds (train=11, test=42)
+- Check configuration matches default.yaml
+- Ensure 100 epochs of training
+- Compare with baseline in `docs/EXPERIMENTS.md`
+
+### Common Error Messages
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `RuntimeError: CUDA error` | GPU issue | Use CPU: `device = torch.device('cpu')` |
+| `ValueError: too many values to unpack` | Data shape mismatch | Check DataLoader batch_size |
+| `KeyError: 'model_state_dict'` | Corrupted checkpoint | Delete and retrain |
+| `AssertionError in tests` | Logic error | Check test expectations match implementation |
+| `MemoryError` | Insufficient RAM | Reduce batch_size or model size |
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. **Check Documentation**:
+   - `docs/TESTING.md` - Testing details and edge cases
+   - `docs/ARCHITECTURE.md` - System architecture and APIs
+   - `docs/EXPERIMENTS.md` - Parameter sensitivity analysis
+
+2. **Review Code**:
+   - Source code has comprehensive docstrings
+   - Test files show expected usage patterns
+
+3. **Verify Environment**:
+   ```bash
+   python --version  # Should be 3.8+
+   pip list | grep torch  # Verify PyTorch installed
+   pytest tests/ -v  # All tests should pass
+   ```
+
+4. **Check Configuration**:
+   ```bash
+   cat config/default.yaml  # Review default settings
+   python -c "from src.config import load_config; c=load_config(); print(c.to_dict())"
+   ```
+
 ---
 
 ## 📚 Key Concepts
