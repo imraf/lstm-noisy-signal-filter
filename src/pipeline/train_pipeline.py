@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 
 from ..data.generator import SignalGenerator, create_train_test_datasets
 from ..data.dataset import create_dataloaders, save_dataset
-from ..models.lstm_filter import create_model
+from ..models.model_factory import create_model
 from ..training.trainer import LSTMTrainer
 from ..training.evaluator import ModelEvaluator
 

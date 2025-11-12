@@ -3,7 +3,77 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft, fftfreq
-from typing import Tuple
+from typing import Tuple, Optional, List
+from abc import ABC, abstractmethod
+
+
+class BasePlotter(ABC):
+    """Base class for all visualization plotters.
+    
+    Provides common functionality:
+    - Standard DPI and save settings
+    - Color palettes
+    - Figure management
+    - Axis formatting utilities
+    """
+    
+    DEFAULT_DPI = 300
+    DEFAULT_COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+    
+    def __init__(self, dpi: int = DEFAULT_DPI):
+        """Initialize plotter with DPI setting."""
+        self.dpi = dpi
+        self.fig = None
+        self.axes = None
+    
+    def create_figure(
+        self,
+        nrows: int = 1,
+        ncols: int = 1,
+        figsize: Tuple[int, int] = (14, 6),
+        title: Optional[str] = None
+    ) -> Tuple[plt.Figure, np.ndarray]:
+        """Create figure with standard settings."""
+        self.fig, self.axes = plt.subplots(nrows, ncols, figsize=figsize)
+        if title:
+            self.fig.suptitle(title, fontsize=16, fontweight='bold')
+        return self.fig, self.axes
+    
+    def format_axis(
+        self,
+        ax: plt.Axes,
+        xlabel: Optional[str] = None,
+        ylabel: Optional[str] = None,
+        title: Optional[str] = None,
+        grid: bool = True,
+        fontweight: str = 'bold'
+    ):
+        """Format axis with labels and styling."""
+        if xlabel:
+            ax.set_xlabel(xlabel, fontweight=fontweight)
+        if ylabel:
+            ax.set_ylabel(ylabel, fontweight=fontweight)
+        if title:
+            ax.set_title(title, fontweight=fontweight)
+        if grid:
+            ax.grid(True, alpha=0.3)
+    
+    def save_and_close(self, save_path: str):
+        """Save figure and close."""
+        plt.tight_layout()
+        plt.savefig(save_path, dpi=self.dpi, bbox_inches='tight')
+        plt.close()
+    
+    def get_colors(self, n: Optional[int] = None) -> List[str]:
+        """Get color palette."""
+        if n is None:
+            return self.DEFAULT_COLORS
+        return self.DEFAULT_COLORS[:n]
+    
+    @abstractmethod
+    def plot(self, *args, **kwargs):
+        """Abstract plot method to be implemented by subclasses."""
+        pass
 
 
 def setup_figure(nrows: int, ncols: int, figsize: Tuple[int, int], title: str = None):
