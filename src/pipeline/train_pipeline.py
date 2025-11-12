@@ -93,7 +93,7 @@ def execute_training_pipeline(
     )
     
     final_path = model_dir / f"lstm_l1_epoch{num_epochs}_final.pth"
-    trainer.save_checkpoint(final_path, num_epochs)
+    trainer._save_checkpoint(final_path, num_epochs)
     
     evaluator = ModelEvaluator(model, device)
     train_mse = evaluator.compute_mse(train_loader)

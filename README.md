@@ -720,6 +720,33 @@ For production, L>1 (e.g., L=50) would be more efficient.
 
 ---
 
+## 📖 Complete Documentation
+
+This project includes comprehensive documentation for all aspects:
+
+### Core Documentation
+- **[PRD.md](docs/PRD.md)** - Product Requirements Document with measurable KPIs
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture with C4 diagrams
+- **[ADR.md](docs/ADR.md)** - Architectural Decision Records (9 key decisions)
+
+### User Guides
+- **[CLI_USAGE_GUIDE.md](docs/CLI_USAGE_GUIDE.md)** - Complete CLI reference with examples
+- **[WORKFLOW_GUIDE.md](docs/WORKFLOW_GUIDE.md)** - Visual workflows and decision trees
+
+### Technical Documentation
+- **[TESTING.md](docs/TESTING.md)** - Testing strategy and edge cases
+- **[TEST_COVERAGE_REPORT.md](docs/TEST_COVERAGE_REPORT.md)** - Coverage analysis (93%)
+- **[EXPERIMENTS.md](docs/EXPERIMENTS.md)** - Parameter sensitivity analysis
+- **[EXTENSIBILITY.md](docs/EXTENSIBILITY.md)** - Plugin architecture guide
+
+### Quality Assurance
+- **[FINAL_QA_REPORT.md](docs/FINAL_QA_REPORT.md)** - Complete quality assessment
+- **[GRADE_IMPROVEMENTS_SUMMARY.md](docs/GRADE_IMPROVEMENTS_SUMMARY.md)** - Improvements log
+
+**Total:** 10 comprehensive documentation files, 5,500+ lines
+
+---
+
 ## 🎓 Educational Value
 
 This project demonstrates:
