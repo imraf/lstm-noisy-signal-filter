@@ -7,6 +7,7 @@ Creates visualizations for:
 
 import matplotlib.pyplot as plt
 from typing import List, Optional
+from .plot_utils import setup_figure, save_and_close, format_axis
 
 
 def plot_model_io_structure(save_path: str):
@@ -15,7 +16,7 @@ def plot_model_io_structure(save_path: str):
     Args:
         save_path: Path to save figure
     """
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = setup_figure(1, 1, (14, 8))
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 10)
     ax.axis('off')
@@ -87,8 +88,7 @@ def plot_model_io_structure(save_path: str):
     ax.text(5, 0.7, '(Hidden state preserved between consecutive samples)', 
            ha='center', va='center', fontsize=8, style='italic', color='#F57C00')
     
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.close()
+    save_and_close(save_path)
 
 
 def plot_training_loss(
@@ -103,7 +103,7 @@ def plot_training_loss(
         val_losses: Optional list of validation losses
         save_path: Path to save figure
     """
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig, ax = setup_figure(1, 1, (12, 6))
     
     epochs = range(1, len(train_losses) + 1)
     
@@ -112,11 +112,9 @@ def plot_training_loss(
     if val_losses and len(val_losses) > 0:
         ax.plot(epochs, val_losses, 'r-', linewidth=2, label='Validation Loss', marker='s', markersize=4)
     
-    ax.set_xlabel('Epoch', fontsize=12)
-    ax.set_ylabel('MSE Loss', fontsize=12)
-    ax.set_title('Training Progress: Loss vs Epoch', fontsize=16, fontweight='bold')
+    format_axis(ax, xlabel='Epoch', ylabel='MSE Loss', 
+                title='Training Progress: Loss vs Epoch')
     ax.legend(loc='upper right', fontsize=11)
-    ax.grid(True, alpha=0.3)
     
     final_train_loss = train_losses[-1]
     ax.annotate(f'Final: {final_train_loss:.6f}', 
@@ -125,7 +123,5 @@ def plot_training_loss(
                arrowprops=dict(arrowstyle='->', color='blue'),
                fontsize=10, color='blue', fontweight='bold')
     
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.close()
+    save_and_close(save_path)
 

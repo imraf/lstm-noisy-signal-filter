@@ -110,6 +110,7 @@ def execute_training_pipeline(
         print(f"[RESULTS] Generalization Gap: {abs(test_mse - train_mse):.8f}")
     
     return {
+        'model': model,
         'history': history,
         'train_mse': train_mse,
         'test_mse': test_mse,

@@ -389,7 +389,11 @@ The project includes comprehensive tests covering:
 - ✅ **Training Loop**: Loss computation, gradient handling, checkpointing
 - ✅ **Evaluation**: MSE calculation, prediction generation, per-frequency metrics
 
-**Test Coverage**: >85% of source code
+**Test Coverage**: **91.99%** verified (125 tests, all passing ✅)
+- **Platform**: Python 3.12.11
+- **Test Count**: 125 tests across 6 test modules
+- **Execution Time**: ~3 minutes
+- **Coverage Report**: `outputs/coverage/htmlcov/index.html`
 
 ### Running Tests
 

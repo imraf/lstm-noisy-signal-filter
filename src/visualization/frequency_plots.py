@@ -54,22 +54,33 @@ def plot_long_sequence_predictions(
 ):
     """Plot long sequence predictions for all frequencies."""
     samples_per_freq = len(predictions) // len(frequencies)
-    fig, axes = setup_figure(4, 1, (16, 12), 'Long Sequence Predictions (Full 10 seconds)')
+    num_freqs = len(frequencies)
+    fig, axes = setup_figure(num_freqs, 1, (16, 3 * num_freqs), 'Long Sequence Predictions (Full 10 seconds)')
     colors = get_default_colors()
     
-    for i, (freq, color) in enumerate(zip(frequencies, colors)):
+    # Ensure axes is iterable even for single frequency
+    if num_freqs == 1:
+        axes = [axes]
+    
+    for i, (freq, color) in enumerate(zip(frequencies, colors[:num_freqs])):
         start_idx = i * samples_per_freq
         end_idx = start_idx + samples_per_freq
         freq_preds = predictions[start_idx:end_idx]
         freq_targets = targets[start_idx:end_idx]
         
-        axes[i].plot(t, freq_targets, color='green', linewidth=1.5, label='Target', alpha=0.6)
-        axes[i].plot(t, freq_preds, color=color, linewidth=1, label='Prediction', alpha=0.8)
+        # Use the shorter of t and freq_targets length
+        plot_length = min(len(t), len(freq_targets))
+        t_plot = t[:plot_length] if len(t) > plot_length else t
+        freq_targets_plot = freq_targets[:plot_length]
+        freq_preds_plot = freq_preds[:plot_length]
+        
+        axes[i].plot(t_plot, freq_targets_plot, color='green', linewidth=1.5, label='Target', alpha=0.6)
+        axes[i].plot(t_plot, freq_preds_plot, color=color, linewidth=1, label='Prediction', alpha=0.8)
         format_axis(axes[i], ylabel=f'f{i+1}={freq}Hz')
         axes[i].legend(loc='upper right', fontsize=9)
-        axes[i].set_xlim(0, 10)
+        axes[i].set_xlim(0, min(10, t_plot[-1]))
         
-        mse = np.mean((freq_preds - freq_targets) ** 2)
+        mse = np.mean((freq_preds_plot - freq_targets_plot) ** 2)
         axes[i].text(0.02, 0.98, f'MSE: {mse:.6f}', transform=axes[i].transAxes, 
                     fontsize=9, verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
     
@@ -88,7 +99,7 @@ def plot_per_frequency_metrics(
     freq_labels = [f'f{i+1}={freq}Hz' for i, freq in enumerate(frequencies)]
     mse_values = [metrics[i]['mse'] for i in range(len(frequencies))]
     mae_values = [metrics[i]['mae'] for i in range(len(frequencies))]
-    colors = get_default_colors()
+    colors = get_default_colors()[:len(frequencies)]
     
     bars1 = ax1.bar(freq_labels, mse_values, color=colors, alpha=0.7, edgecolor='black')
     format_axis(ax1, ylabel='MSE', title='Mean Squared Error')
