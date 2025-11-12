@@ -272,6 +272,10 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# (Optional) Setup environment variables
+cp .env.example .env
+# Edit .env to customize configuration
 ```
 
 ### Training

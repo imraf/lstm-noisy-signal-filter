@@ -44,8 +44,14 @@ def generate_predictions(
             hidden = (hidden[0].detach(), hidden[1].detach())
             
             output = output.squeeze(1)
-            predictions_list.append(output.cpu().numpy())
-            targets_list.append(targets.cpu().numpy())
+            # Use numpy(force=True) to handle PyTorch 2.2.x compatibility
+            try:
+                predictions_list.append(output.detach().cpu().numpy(force=True))
+                targets_list.append(targets.detach().cpu().numpy(force=True))
+            except (RuntimeError, TypeError):
+                # Fallback for older PyTorch versions
+                predictions_list.append(np.array(output.detach().cpu().tolist()))
+                targets_list.append(np.array(targets.detach().cpu().tolist()))
     
     predictions = np.concatenate(predictions_list, axis=0).flatten()
     targets = np.concatenate(targets_list, axis=0).flatten()

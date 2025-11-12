@@ -49,7 +49,10 @@ class TestFrequencyDataset:
         assert torch.isclose(input_sample[0, 0], torch.tensor(S[0]), atol=1e-5)
         
         # Next 4 elements should be one-hot vector
-        one_hot_part = input_sample[0, 1:5].numpy()
+        try:
+            one_hot_part = input_sample[0, 1:5].detach().cpu().numpy(force=True)
+        except (RuntimeError, TypeError):
+            one_hot_part = np.array(input_sample[0, 1:5].detach().cpu().tolist())
         np.testing.assert_array_almost_equal(one_hot_part, one_hot[0])
     
     def test_one_hot_preservation(self, sample_data):
@@ -60,7 +63,10 @@ class TestFrequencyDataset:
         # Check first 4 samples (should cycle through all frequencies)
         for i in range(4):
             input_sample, _ = dataset[i]
-            one_hot_part = input_sample[0, 1:5].numpy()
+            try:
+                one_hot_part = input_sample[0, 1:5].detach().cpu().numpy(force=True)
+            except (RuntimeError, TypeError):
+                one_hot_part = np.array(input_sample[0, 1:5].detach().cpu().tolist())
             
             # Should sum to 1
             assert np.isclose(np.sum(one_hot_part), 1.0)
@@ -91,7 +97,10 @@ class TestFrequencyDataset:
         
         # All should have one-hot vector [1, 0, 0, 0]
         for i in range(10):
-            one_hot_part = freq_inputs[i, 0, 1:5].numpy()
+            try:
+                one_hot_part = freq_inputs[i, 0, 1:5].detach().cpu().numpy(force=True)
+            except (RuntimeError, TypeError):
+                one_hot_part = np.array(freq_inputs[i, 0, 1:5].detach().cpu().tolist())
             expected = np.array([1.0, 0.0, 0.0, 0.0])
             np.testing.assert_array_almost_equal(one_hot_part, expected)
     
@@ -218,11 +227,15 @@ class TestDatasetEdgeCases:
         input_sample, target_sample = dataset[0]
         assert input_sample.shape == (1, 5)
     
-    def test_single_sample_batch(self, train_test_data):
+    def test_single_sample_batch(self):
         """Test with batch size of 1."""
+        # Create minimal test data
+        gen = SignalGenerator(num_samples=10, seed=11)
+        S, targets, one_hot = gen.generate_dataset()
+        
         train_loader, _ = create_dataloaders(
-            *train_test_data[:3],  # Just train data
-            *train_test_data[3:],   # Just test data
+            S, targets, one_hot,  # Train data
+            S, targets, one_hot,  # Test data (same for this test)
             batch_size=1
         )
         

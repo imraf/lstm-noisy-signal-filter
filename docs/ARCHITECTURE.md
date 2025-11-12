@@ -33,124 +33,116 @@ The LSTM Frequency Filter is a deep learning system that extracts pure sinusoida
 
 ### 2.1 Level 1: System Context Diagram
 
+```mermaid
+graph TB
+    User[Research Scientist<br/>Configures, trains,<br/>evaluates models]
+    
+    System[LSTM Frequency Filter System<br/>Extracts pure frequencies<br/>from noisy signals]
+    
+    PyTorch[(PyTorch<br/>Deep Learning Framework)]
+    NumPy[(NumPy/SciPy<br/>Numerical Computing)]
+    Matplotlib[(Matplotlib<br/>Visualization)]
+    
+    User -->|Trains & Evaluates| System
+    System -->|Uses| PyTorch
+    System -->|Uses| NumPy
+    System -->|Uses| Matplotlib
+    
+    style User fill:#e1f5ff,stroke:#0366d6,stroke-width:2px
+    style System fill:#d4edda,stroke:#28a745,stroke-width:3px
+    style PyTorch fill:#f8f9fa,stroke:#6c757d,stroke-width:2px
+    style NumPy fill:#f8f9fa,stroke:#6c757d,stroke-width:2px
+    style Matplotlib fill:#f8f9fa,stroke:#6c757d,stroke-width:2px
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     System Context                           │
-│                                                              │
-│                                                              │
-│        ┌──────────────┐                                     │
-│        │              │                                     │
-│        │  Research    │                                     │
-│        │  Scientist   │                                     │
-│        │              │                                     │
-│        └──────┬───────┘                                     │
-│               │                                             │
-│               │ Configures, trains,                        │
-│               │ evaluates models                           │
-│               │                                             │
-│               ▼                                             │
-│      ┌─────────────────────┐                               │
-│      │                     │                               │
-│      │  LSTM Frequency     │                               │
-│      │  Filter System      │                               │
-│      │                     │                               │
-│      │  Extracts pure      │                               │
-│      │  frequencies from   │                               │
-│      │  noisy signals      │                               │
-│      │                     │                               │
-│      └─────────────────────┘                               │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
 
-External Dependencies:
-- PyTorch (Deep Learning Framework)
-- NumPy/SciPy (Numerical Computing)
-- Matplotlib (Visualization)
-```
+**External Dependencies:**
+- **PyTorch**: Deep Learning Framework for neural network implementation
+- **NumPy/SciPy**: Numerical computing and signal processing
+- **Matplotlib**: Visualization and plotting
 
 ### 2.2 Level 2: Container Diagram
 
-```
-┌───────────────────────────────────────────────────────────────────┐
-│                    LSTM Frequency Filter System                    │
-│                                                                    │
-│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐        │
-│  │   Data      │     │   Model     │     │  Training   │        │
-│  │ Generation  │────▶│   (LSTM)    │◀────│  Pipeline   │        │
-│  │             │     │             │     │             │        │
-│  │ - Signal    │     │ - Forward   │     │ - Train     │        │
-│  │   Generator │     │   Pass      │     │   Loop      │        │
-│  │ - Dataset   │     │ - State     │     │ - Validate  │        │
-│  │   Loader    │     │   Init      │     │ - Save      │        │
-│  └─────────────┘     └─────────────┘     └─────────────┘        │
-│         │                                         │               │
-│         │                                         │               │
-│         ▼                                         ▼               │
-│  ┌─────────────┐                          ┌─────────────┐        │
-│  │   Config    │                          │ Evaluation  │        │
-│  │ Management  │                          │  & Metrics  │        │
-│  │             │                          │             │        │
-│  │ - YAML      │                          │ - MSE/MAE   │        │
-│  │   Loader    │                          │ - Predict   │        │
-│  │ - Validate  │                          │ - Analysis  │        │
-│  └─────────────┘                          └─────────────┘        │
-│                                                    │               │
-│                                                    ▼               │
-│                                            ┌─────────────┐        │
-│                                            │Visualization│        │
-│                                            │   Engine    │        │
-│                                            │             │        │
-│                                            │ - Plots     │        │
-│                                            │ - Figures   │        │
-│                                            └─────────────┘        │
-│                                                                    │
-└───────────────────────────────────────────────────────────────────┘
-
-Storage:
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│   Config/    │  │  Outputs/    │  │  Outputs/    │
-│   *.yaml     │  │  Models/     │  │  Visualizations│
-└──────────────┘  └──────────────┘  └──────────────┘
+```mermaid
+graph TB
+    subgraph System[LSTM Frequency Filter System]
+        Data[Data Generation<br/>---<br/>Signal Generator<br/>Dataset Loader]
+        Model[Model LSTM<br/>---<br/>Forward Pass<br/>State Init]
+        Training[Training Pipeline<br/>---<br/>Train Loop<br/>Validate<br/>Save]
+        Config[Config Management<br/>---<br/>YAML Loader<br/>Validate]
+        Eval[Evaluation & Metrics<br/>---<br/>MSE/MAE<br/>Predict<br/>Analysis]
+        Viz[Visualization Engine<br/>---<br/>Plots<br/>Figures]
+        
+        Data -->|Provides Data| Model
+        Training -->|Trains| Model
+        Data -->|Uses Config| Config
+        Training -->|Evaluates| Eval
+        Eval -->|Generates| Viz
+    end
+    
+    Storage1[(Config/<br/>*.yaml)]
+    Storage2[(Outputs/<br/>Models/)]
+    Storage3[(Outputs/<br/>Visualizations/)]
+    
+    Config -.->|Reads| Storage1
+    Training -.->|Saves Models| Storage2
+    Viz -.->|Saves Plots| Storage3
+    
+    style Data fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Model fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Training fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Config fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style Eval fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style Viz fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+    style Storage1 fill:#f5f5f5,stroke:#616161,stroke-width:2px
+    style Storage2 fill:#f5f5f5,stroke:#616161,stroke-width:2px
+    style Storage3 fill:#f5f5f5,stroke:#616161,stroke-width:2px
 ```
 
-### 2.3 Level 3: Component Diagram
+**Storage Components:**
+- **Config Directory**: YAML configuration files (default.yaml, experiment.yaml)
+- **Models Directory**: Trained model checkpoints (.pth files)
+- **Visualizations Directory**: Generated plots and figures (.png files)
 
+### 2.3 Level 3: Component Diagram (LSTM Model)
+
+```mermaid
+graph LR
+    Input[Input Layer<br/>---<br/>5D vector<br/>S t + C]
+    
+    subgraph LSTM[LSTM Layers]
+        L1[Layer 1<br/>64 units]
+        D1[Dropout 0.2]
+        L2[Layer 2<br/>64 units]
+        L1 --> D1
+        D1 --> L2
+    end
+    
+    FC[FC Output<br/>---<br/>Linear 64→1]
+    Output[1D Output<br/>Predicted Signal]
+    
+    State[(Hidden State<br/>h_t, c_t<br/>Preserved & Detached)]
+    
+    Input --> LSTM
+    LSTM --> FC
+    FC --> Output
+    
+    State -.->|State Input| LSTM
+    LSTM -.->|State Output| State
+    
+    style Input fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style L1 fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style D1 fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    style L2 fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style FC fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Output fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style State fill:#fff9c4,stroke:#f57f17,stroke-width:2px,stroke-dasharray: 5 5
 ```
-LSTM Model Component
-┌─────────────────────────────────────────────────────────┐
-│                    LSTMFrequencyFilter                   │
-│                                                          │
-│  ┌────────────────┐         ┌────────────────┐         │
-│  │  Input Layer   │         │  LSTM Layers   │         │
-│  │                │────────▶│                │         │
-│  │  [5D vector]   │         │  Layer 1 (64)  │         │
-│  │  S(t) + C      │         │  Dropout 0.2   │         │
-│  │                │         │  Layer 2 (64)  │         │
-│  └────────────────┘         └───────┬────────┘         │
-│                                     │                   │
-│                                     │                   │
-│                                     ▼                   │
-│                             ┌────────────────┐          │
-│                             │  FC Output     │          │
-│                             │                │          │
-│                             │  Linear(64,1)  │          │
-│                             │                │          │
-│                             └───────┬────────┘          │
-│                                     │                   │
-│                                     ▼                   │
-│                               [1D output]               │
-│                                                          │
-│  State Management:                                      │
-│  ┌────────────┐                                         │
-│  │ h_t, c_t   │◀───┐                                    │
-│  │ (hidden    │    │                                    │
-│  │  state)    │    │ Preserved & Detached              │
-│  └────────────┘    │ Between Batches                   │
-│        │           │                                    │
-│        └───────────┘                                    │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-```
+
+**Architecture Details:**
+- **Input**: 5-dimensional vector [S(t), C₁, C₂, C₃, C₄]
+- **LSTM Layers**: 2 layers with 64 hidden units each, dropout 0.2
+- **Output**: Fully connected layer (64→1) for single value prediction
+- **State Management**: Hidden state (h_t, c_t) preserved and detached between batches
 
 ---
 
@@ -284,64 +276,70 @@ Responsibilities:
 
 ## 4. Operational Architecture
 
-### 4.1 Training Flow (UML Sequence Diagram)
+### 4.1 Training Flow (Sequence Diagram)
 
-```
-User       train.py    TrainPipeline   DataLoader   LSTMTrainer   Model
- │             │             │             │             │          │
- │──run────▶  │             │             │             │          │
- │             │──setup────▶│             │             │          │
- │             │             │──generate──▶│             │          │
- │             │             │◀──data─────│             │          │
- │             │             │                          │          │
- │             │             │──────train_model────────▶│          │
- │             │             │                          │          │
- │             │             │          TRAINING LOOP   │          │
- │             │             │          ┌─────────────┐ │          │
- │             │             │          │For Epoch 1-100          │
- │             │             │          │             │ │          │
- │             │             │          │ init_hidden─┼─┼────────▶│
- │             │             │          │◀────h,c─────┼─┼─────────│
- │             │             │          │             │ │          │
- │             │             │          │For Each Batch          │
- │             │             │          │  ┌──────────┼─┼────┐    │
- │             │             │          │  │ forward()┼─┼───▶│    │
- │             │             │          │  │◀─output,h,c─────│    │
- │             │             │          │  │ detach(h,c)     │    │
- │             │             │          │  │ loss.backward() │    │
- │             │             │          │  │ optimizer.step()│    │
- │             │             │          │  └──────────────────┘    │
- │             │             │          │             │ │          │
- │             │             │          │ validate()  │ │          │
- │             │             │          │ checkpoint()│ │          │
- │             │             │          └─────────────┘ │          │
- │             │             │                          │          │
- │             │             │◀──────trained_model──────│          │
- │             │◀──complete──│                          │          │
- │◀──results───│             │                          │          │
+```mermaid
+sequenceDiagram
+    participant User
+    participant train.py
+    participant TrainPipeline
+    participant DataLoader
+    participant LSTMTrainer
+    participant Model
+    
+    User->>train.py: run()
+    train.py->>TrainPipeline: setup()
+    TrainPipeline->>DataLoader: generate()
+    DataLoader-->>TrainPipeline: data
+    
+    TrainPipeline->>LSTMTrainer: train_model()
+    
+    Note over LSTMTrainer: TRAINING LOOP
+    loop For Epoch 1-100
+        LSTMTrainer->>Model: init_hidden()
+        Model-->>LSTMTrainer: h, c
+        
+        loop For Each Batch
+            LSTMTrainer->>Model: forward(x, h, c)
+            Model-->>LSTMTrainer: output, h, c
+            Note over LSTMTrainer: detach(h, c)
+            Note over LSTMTrainer: loss.backward()
+            Note over LSTMTrainer: optimizer.step()
+        end
+        
+        Note over LSTMTrainer: validate()
+        Note over LSTMTrainer: checkpoint()
+    end
+    
+    LSTMTrainer-->>TrainPipeline: trained_model
+    TrainPipeline-->>train.py: complete
+    train.py-->>User: results
 ```
 
-### 4.2 Prediction Flow (UML Sequence Diagram)
+### 4.2 Prediction Flow (Sequence Diagram)
 
-```
-User    Evaluator   Model      DataLoader
- │          │         │            │
- │─predict─▶│         │            │
- │          │──get───▶│            │
- │          │◀─data───│            │
- │          │         │            │
- │          │─init_hidden────────▶ │
- │          │◀───h,c──────────────│
- │          │         │            │
- │          │ For Each Batch       │
- │          │ ┌─────────────────┐  │
- │          │ │ forward(x,h,c)─┼─▶│
- │          │ │◀──output,h,c───┼──│
- │          │ │ detach(h,c)    │  │
- │          │ │ store(output)  │  │
- │          │ └─────────────────┘  │
- │          │         │            │
- │◀results──│         │            │
+```mermaid
+sequenceDiagram
+    participant User
+    participant Evaluator
+    participant Model
+    participant DataLoader
+    
+    User->>Evaluator: predict()
+    Evaluator->>DataLoader: get()
+    DataLoader-->>Evaluator: data
+    
+    Evaluator->>Model: init_hidden()
+    Model-->>Evaluator: h, c
+    
+    loop For Each Batch
+        Evaluator->>Model: forward(x, h, c)
+        Model-->>Evaluator: output, h, c
+        Note over Evaluator: detach(h, c)
+        Note over Evaluator: store(output)
+    end
+    
+    Evaluator-->>User: results
 ```
 
 ### 4.3 Runtime Behavior
@@ -378,91 +376,36 @@ Epoch End:
 
 ### 5.1 End-to-End Data Pipeline
 
-```
-┌──────────────┐
-│Configuration │
-│  (YAML)      │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────────────────────────────────────────────────┐
-│ SIGNAL GENERATION                                        │
-│                                                          │
-│  frequencies = [1,3,5,7] Hz                             │
-│  t = linspace(0, 10, 10000)                             │
-│                                                          │
-│  For each frequency f:                                   │
-│    A_i(t) ~ U(0.8, 1.2)  ← Per-sample amplitude noise   │
-│    φ_i(t) ~ U(0, 0.1π)   ← Per-sample phase noise       │
-│    component = A_i(t) * sin(2πf*t + φ_i(t))            │
-│                                                          │
-│  S(t) = (1/4) Σ components  ← Mixed noisy signal        │
-│  Target_i(t) = sin(2πf_i*t) ← Pure targets              │
-└───────────────────┬──────────────────────────────────────┘
-                    │
-                    ▼
-┌──────────────────────────────────────────────────────────┐
-│ DATASET CONSTRUCTION                                     │
-│                                                          │
-│  For each time step t, for each frequency f:            │
-│    Input:  [S(t), C1, C2, C3, C4]  ← 5D vector          │
-│    Target: Target_f(t)              ← 1D scalar          │
-│                                                          │
-│  Total: 40,000 samples (10,000 steps × 4 frequencies)   │
-└───────────────────┬──────────────────────────────────────┘
-                    │
-                    ▼
-┌──────────────────────────────────────────────────────────┐
-│ BATCHING & LOADING                                       │
-│                                                          │
-│  DataLoader:                                             │
-│    - Batch size: 32                                      │
-│    - Shuffle: False (critical for L=1 sequential)       │
-│    - Shape: [32, 1, 5] per batch                        │
-└───────────────────┬──────────────────────────────────────┘
-                    │
-                    ▼
-┌──────────────────────────────────────────────────────────┐
-│ LSTM PROCESSING                                          │
-│                                                          │
-│  Input [32,1,5] ──────┐                                 │
-│                        │                                 │
-│  State (h,c) ─────────┤                                 │
-│                        │                                 │
-│                        ▼                                 │
-│                  ┌──────────┐                            │
-│                  │   LSTM   │                            │
-│                  │  Layers  │                            │
-│                  └────┬─────┘                            │
-│                       │                                  │
-│                       ▼                                  │
-│                  ┌──────────┐                            │
-│                  │ FC Layer │                            │
-│                  └────┬─────┘                            │
-│                       │                                  │
-│  Output [32,1,1] ◀───┘                                  │
-│  State (h,c) ◀─── Updated                               │
-└───────────────────┬──────────────────────────────────────┘
-                    │
-                    ▼
-┌──────────────────────────────────────────────────────────┐
-│ LOSS & OPTIMIZATION                                      │
-│                                                          │
-│  loss = MSE(output, target)                             │
-│  loss.backward()                                         │
-│  clip_grad_norm(params, max_norm=1.0)                   │
-│  optimizer.step()                                        │
-└───────────────────┬──────────────────────────────────────┘
-                    │
-                    ▼
-┌──────────────────────────────────────────────────────────┐
-│ EVALUATION & VISUALIZATION                               │
-│                                                          │
-│  - Compute MSE, MAE                                      │
-│  - Generate predictions                                  │
-│  - Create 14 visualizations                             │
-│  - Save results JSON                                     │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Config[Configuration YAML]
+    
+    SignalGen[SIGNAL GENERATION<br/>---<br/>frequencies = 1,3,5,7 Hz<br/>t = linspace 0,10,10000<br/>A_i t ~ U 0.8,1.2<br/>φ_i t ~ U 0,0.1π<br/>S t = 1/4 Σ components]
+    
+    Dataset[DATASET CONSTRUCTION<br/>---<br/>Input: S t, C1, C2, C3, C4<br/>Target: Target_f t<br/>Total: 40,000 samples<br/>10,000 steps × 4 frequencies]
+    
+    Batching[BATCHING & LOADING<br/>---<br/>Batch size: 32<br/>Shuffle: False<br/>Shape: 32,1,5 per batch]
+    
+    LSTM[LSTM PROCESSING<br/>---<br/>Input 32,1,5 + State h,c<br/>→ LSTM Layers<br/>→ FC Layer<br/>→ Output 32,1,1<br/>→ Updated State h,c]
+    
+    Loss[LOSS & OPTIMIZATION<br/>---<br/>loss = MSE output,target<br/>loss.backward<br/>clip_grad_norm params,1.0<br/>optimizer.step]
+    
+    Eval[EVALUATION & VISUALIZATION<br/>---<br/>Compute MSE, MAE<br/>Generate predictions<br/>Create 14 visualizations<br/>Save results JSON]
+    
+    Config --> SignalGen
+    SignalGen --> Dataset
+    Dataset --> Batching
+    Batching --> LSTM
+    LSTM --> Loss
+    Loss --> Eval
+    
+    style Config fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style SignalGen fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Dataset fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Batching fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style LSTM fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style Loss fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style Eval fill:#e0f2f1,stroke:#00796b,stroke-width:2px
 ```
 
 ### 5.2 Data Shapes Throughout Pipeline

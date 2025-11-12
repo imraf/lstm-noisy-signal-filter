@@ -70,3 +70,57 @@ def format_axis(ax, xlabel: str = None, ylabel: str = None, title: str = None, g
     if grid:
         ax.grid(True, alpha=0.3)
 
+
+def plot_fft_spectrum(ax, signal: np.ndarray, sampling_rate: float, color: str = 'black', 
+                      linewidth: float = 1.5, xlim: Tuple[float, float] = (0, 15)):
+    """Plot FFT spectrum on given axis.
+    
+    Args:
+        ax: Matplotlib axis
+        signal: Input signal
+        sampling_rate: Sampling rate
+        color: Line color
+        linewidth: Line width
+        xlim: X-axis limits
+    """
+    fft_vals, fft_freq = compute_fft(signal, sampling_rate)
+    magnitude, freq_positive = get_positive_spectrum(fft_vals, fft_freq)
+    ax.plot(freq_positive, np.abs(fft_vals[fft_freq > 0]), color=color, linewidth=linewidth)
+    ax.set_xlim(xlim)
+    ax.grid(True, alpha=0.3)
+
+
+def add_frequency_markers(ax, frequencies, color: str = 'red', linestyle: str = '--', 
+                          alpha: float = 0.5, linewidth: float = 1):
+    """Add vertical lines for target frequencies.
+    
+    Args:
+        ax: Matplotlib axis
+        frequencies: List of frequencies to mark
+        color: Line color
+        linestyle: Line style
+        alpha: Line transparency
+        linewidth: Line width
+    """
+    for freq in frequencies:
+        ax.axvline(freq, color=color, linestyle=linestyle, alpha=alpha, linewidth=linewidth)
+
+
+def add_metric_text(ax, text: str, position: str = 'top_left'):
+    """Add metric text box to axis.
+    
+    Args:
+        ax: Matplotlib axis
+        text: Text to display
+        position: Position ('top_left', 'top_right', 'bottom_left', 'bottom_right')
+    """
+    positions = {
+        'top_left': (0.02, 0.98, 'top'),
+        'top_right': (0.98, 0.98, 'top'),
+        'bottom_left': (0.02, 0.02, 'bottom'),
+        'bottom_right': (0.98, 0.02, 'bottom')
+    }
+    x, y, va = positions.get(position, positions['top_left'])
+    ax.text(x, y, text, transform=ax.transAxes, fontsize=10, verticalalignment=va,
+            bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+
