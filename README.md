@@ -6,7 +6,7 @@
 
 **An advanced LSTM system that extracts pure sinusoidal frequencies from mixed, noisy signals through conditional regression**
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8-3.12](https://img.shields.io/badge/python-3.8--3.12-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -259,6 +259,20 @@ The spectrogram shows consistent frequency bands at the four target frequencies 
 
 ## 🚀 Usage
 
+### Prerequisites
+
+**⚠️ IMPORTANT: Python Version Requirements**
+
+This project requires **Python 3.8 - 3.12**. PyTorch is not compatible with Python 3.13+.
+
+```bash
+# Check your Python version
+python --version
+
+# Should output: Python 3.8.x, 3.9.x, 3.10.x, 3.11.x, or 3.12.x
+# If you have Python 3.13+, install an older version
+```
+
 ### Installation
 
 ```bash
@@ -266,9 +280,12 @@ The spectrogram shows consistent frequency bands at the four target frequencies 
 git clone <repository-url>
 cd lstm-frequency-filter-02
 
-# Create virtual environment
-python -m venv venv
+# Create virtual environment with compatible Python version
+python3.11 -m venv venv  # Use python3.8, 3.9, 3.10, 3.11, or 3.12
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Verify Python version in virtual environment
+python --version
 
 # Install dependencies
 pip install -r requirements.txt
@@ -462,13 +479,19 @@ pip install -r requirements.txt
 #### Problem: Python version mismatch
 **Solution:**
 ```bash
-# Check Python version (requires 3.8+)
+# Check Python version (requires 3.8 - 3.12, NOT 3.13+)
 python --version
 
-# Create virtual environment with specific version
-python3.8 -m venv venv
+# If you have Python 3.13+, PyTorch is not compatible
+# Install Python 3.11 or 3.12 and create virtual environment
+python3.11 -m venv venv  # or python3.12
 source venv/bin/activate
+
+# Verify correct version
+python --version  # Should show 3.8.x - 3.12.x
 ```
+
+**Note**: Python 3.13+ is NOT compatible with PyTorch at this time. Use Python 3.8-3.12.
 
 #### Problem: Permission denied on venv creation
 **Solution:**
@@ -654,7 +677,7 @@ If you encounter issues not covered here:
 
 3. **Verify Environment**:
    ```bash
-   python --version  # Should be 3.8+
+   python --version  # Should be 3.8-3.12 (NOT 3.13+)
    pip list | grep torch  # Verify PyTorch installed
    pytest tests/ -v  # All tests should pass
    ```

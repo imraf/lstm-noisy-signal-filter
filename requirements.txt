@@ -1,3 +1,7 @@
+# Python Version Requirement: 3.8 - 3.12
+# PyTorch is NOT compatible with Python 3.13+
+# Please use Python 3.8, 3.9, 3.10, 3.11, or 3.12
+
 # Deep Learning
 torch>=2.0.0
 torchvision>=0.15.0
