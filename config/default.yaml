@@ -1,0 +1,145 @@
+# Default Configuration for LSTM Frequency Filter
+# All hyperparameters and system settings
+
+# Data Generation Settings
+data:
+  train_seed: 11
+  test_seed: 42
+  frequencies: [1.0, 3.0, 5.0, 7.0]
+  time_range:
+    start: 0.0
+    end: 10.0
+  num_samples: 10000
+  
+  # Noise parameters
+  noise:
+    amplitude_min: 0.8
+    amplitude_max: 1.2
+    phase_min: 0.0
+    phase_max: 0.314159  # 0.1 * pi
+
+# Model Architecture
+model:
+  input_size: 5
+  hidden_size: 64
+  num_layers: 2
+  output_size: 1
+  dropout: 0.2
+
+# Training Hyperparameters
+training:
+  num_epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.0
+  
+  # Optimizer settings
+  optimizer: "adam"  # Options: adam, sgd, rmsprop, adamw
+  
+  # Learning rate scheduler (optional)
+  scheduler:
+    enabled: false
+    type: "step"  # Options: step, exponential, cosine
+    step_size: 30
+    gamma: 0.1
+  
+  # Gradient management
+  gradient_clipping:
+    enabled: true
+    max_norm: 1.0
+  
+  # State management
+  state:
+    preserve_between_batches: true
+    reset_each_epoch: true
+
+# Evaluation Settings
+evaluation:
+  compute_per_frequency: true
+  num_frequencies: 4
+  
+  # Metrics to compute
+  metrics:
+    - "mse"
+    - "mae"
+    - "rmse"
+
+# Checkpointing
+checkpointing:
+  enabled: true
+  save_every: 20  # epochs
+  save_dir: "outputs/models"
+  keep_best: true
+  metric: "val_loss"  # Metric to determine best model
+  mode: "min"  # min or max
+
+# Visualization
+visualization:
+  enabled: true
+  save_dir: "outputs/visualizations"
+  dpi: 300
+  format: "png"  # Options: png, pdf, svg
+  
+  # Which plots to generate
+  plots:
+    signal_analysis: true
+    training_curves: true
+    prediction_analysis: true
+    frequency_analysis: true
+    error_analysis: true
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  verbose: true
+  log_file: null  # Set path to enable file logging
+  
+  # Progress bars
+  show_progress: true
+  
+  # Print frequency
+  print_every: 1  # epochs
+
+# System Settings
+system:
+  # Device selection
+  device: "auto"  # Options: auto, cpu, cuda, mps
+  
+  # Random seed for reproducibility
+  random_seed: 42
+  
+  # Number of workers for DataLoader
+  num_workers: 0  # 0 for main thread, >0 for multiprocessing
+  
+  # Pin memory for faster GPU transfer
+  pin_memory: false
+
+# Output Settings
+output:
+  base_dir: "outputs"
+  save_datasets: true
+  save_predictions: true
+  save_metrics: true
+  results_file: "results_summary.json"
+
+# Data Loader Settings
+dataloader:
+  shuffle_train: false  # CRITICAL: False for L=1 sequential training
+  shuffle_test: false
+  drop_last: false  # Keep incomplete last batch
+
+# Validation
+validation:
+  enabled: true
+  split_ratio: null  # Use separate test set instead
+  
+# Experiment Tracking
+experiment:
+  name: "lstm_frequency_filter"
+  version: "1.0"
+  tags:
+    - "lstm"
+    - "signal_processing"
+    - "frequency_extraction"
+  notes: "Default configuration for M.Sc. project"
+

@@ -3,7 +3,8 @@
 import pytest
 import torch
 import numpy as np
-from src.models.lstm_filter import LSTMFrequencyFilter, create_model
+from src.models.lstm_filter import LSTMFrequencyFilter
+from src.models.model_factory import create_model
 
 
 class TestLSTMFrequencyFilter:
@@ -150,7 +151,7 @@ class TestModelSaveLoad:
     
     def test_save_load_model(self, tmp_path):
         """Test saving and loading model."""
-        from src.models.lstm_filter import save_model, load_model
+        from src.models.model_factory import save_model, load_model
         
         # Create and train briefly
         model = LSTMFrequencyFilter(hidden_size=32)
@@ -167,7 +168,7 @@ class TestModelSaveLoad:
     
     def test_load_model_weights_match(self, tmp_path):
         """Test loaded model has same weights."""
-        from src.models.lstm_filter import save_model, load_model
+        from src.models.model_factory import save_model, load_model
         
         model = LSTMFrequencyFilter(hidden_size=32)
         
@@ -191,16 +192,23 @@ class TestModelOutput:
     def test_output_is_regression(self):
         """Test output is continuous (regression, not classification)."""
         model = LSTMFrequencyFilter()
-        x = torch.randn(10, 1, 5)
+        x1 = torch.randn(10, 1, 5)
+        x2 = torch.randn(10, 1, 5)
         
-        output, _ = model(x)
+        output1, _ = model(x1)
+        output2, _ = model(x2)
         
         # Output should be continuous values (not probabilities)
         # No softmax or sigmoid applied
-        assert output.dtype == torch.float32
+        assert output1.dtype == torch.float32
         
-        # Values can be any real number
-        assert not torch.all((output >= 0) & (output <= 1))
+        # Outputs should vary continuously with different inputs (not discrete classes)
+        # Check that outputs are not all the same and vary continuously
+        assert not torch.allclose(output1, output2)
+        
+        # Verify output layer has no activation function
+        # (it's a simple Linear layer without sigmoid/softmax)
+        assert isinstance(model.fc, torch.nn.Linear)
     
     def test_deterministic_output(self):
         """Test same input produces same output (when in eval mode)."""

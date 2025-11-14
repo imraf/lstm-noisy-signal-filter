@@ -71,7 +71,9 @@ class SignalGenerator:
             S += noisy_sinus
         
         # Normalize by number of frequencies: S(t) = (1/4)Σ[...]
-        S = S / self.num_frequencies
+        # Handle edge case of empty frequency list
+        if self.num_frequencies > 0:
+            S = S / self.num_frequencies
         
         return S
     

@@ -1,0 +1,62 @@
+# Experimental Configuration for LSTM Frequency Filter
+# Override default settings for experiments
+
+# Experiment 1: Larger Model
+experiment_name: "larger_model"
+
+model:
+  hidden_size: 128
+  num_layers: 3
+
+training:
+  num_epochs: 150
+  learning_rate: 0.0005
+
+# Experiment metadata
+experiment:
+  name: "lstm_frequency_filter_large"
+  version: "1.1"
+  tags:
+    - "lstm"
+    - "large_model"
+    - "experiment"
+  notes: "Testing larger architecture for improved performance"
+
+# Uncomment below for different experiments:
+
+# # Experiment 2: Different Learning Rate
+# experiment_name: "low_lr"
+# training:
+#   learning_rate: 0.0001
+#   num_epochs: 200
+
+# # Experiment 3: Different Batch Size
+# experiment_name: "large_batch"
+# training:
+#   batch_size: 64
+
+# # Experiment 4: With Learning Rate Scheduler
+# experiment_name: "scheduled_lr"
+# training:
+#   scheduler:
+#     enabled: true
+#     type: "step"
+#     step_size: 30
+#     gamma: 0.5
+
+# # Experiment 5: Different Noise Levels
+# experiment_name: "high_noise"
+# data:
+#   noise:
+#     amplitude_min: 0.6
+#     amplitude_max: 1.4
+#     phase_max: 0.628318  # 0.2 * pi
+
+# # Experiment 6: More Frequencies
+# experiment_name: "more_frequencies"
+# data:
+#   frequencies: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+#   num_frequencies: 8
+# model:
+#   input_size: 9  # Signal + 8 one-hot
+

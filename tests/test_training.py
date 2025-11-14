@@ -71,7 +71,7 @@ class TestLSTMTrainer:
         """Test validation method."""
         trainer, _, test_loader, _ = setup_training
         
-        val_loss = trainer.validate(test_loader)
+        val_loss = trainer.validator.validate(test_loader)
         
         assert isinstance(val_loss, float)
         assert val_loss > 0
@@ -218,7 +218,7 @@ class TestCheckpointing:
         trainer = LSTMTrainer(model, device)
         
         filepath = tmp_path / "checkpoint.pth"
-        trainer.save_checkpoint(str(filepath), epoch=5)
+        trainer._save_checkpoint(str(filepath), epoch=5)
         
         assert filepath.exists()
     
@@ -240,7 +240,7 @@ class TestCheckpointing:
         
         # Save
         filepath = tmp_path / "checkpoint.pth"
-        trainer.save_checkpoint(str(filepath), epoch=1)
+        trainer._save_checkpoint(str(filepath), epoch=1)
         
         # Load into new trainer
         new_model = LSTMFrequencyFilter(hidden_size=16)
