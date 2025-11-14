@@ -5,6 +5,7 @@ ENV/
 .venv/
 
 # Python
+=======
 *.pyc
 *.pyo
 *.pyd
