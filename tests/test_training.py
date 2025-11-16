@@ -218,7 +218,7 @@ class TestCheckpointing:
         trainer = LSTMTrainer(model, device)
         
         filepath = tmp_path / "checkpoint.pth"
-        trainer._save_checkpoint(str(filepath), epoch=5)
+        trainer.save_checkpoint(str(filepath), epoch=5)
         
         assert filepath.exists()
     
@@ -240,7 +240,7 @@ class TestCheckpointing:
         
         # Save
         filepath = tmp_path / "checkpoint.pth"
-        trainer._save_checkpoint(str(filepath), epoch=1)
+        trainer.save_checkpoint(str(filepath), epoch=1)
         
         # Load into new trainer
         new_model = LSTMFrequencyFilter(hidden_size=16)

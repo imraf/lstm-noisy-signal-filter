@@ -107,7 +107,7 @@ class LSTMTrainer:
             if save_path and (epoch % save_every == 0 or epoch == num_epochs):
                 self.checkpoint_manager.save_dir = save_dir
                 checkpoint_path = self.checkpoint_manager.get_checkpoint_path(epoch)
-                self._save_checkpoint(checkpoint_path, epoch)
+                self.save_checkpoint(checkpoint_path, epoch)
                 if verbose:
                     print(f"  Checkpoint saved: {checkpoint_path}")
         
@@ -118,7 +118,7 @@ class LSTMTrainer:
         
         return history
     
-    def _save_checkpoint(self, filepath: str, epoch: int):
+    def save_checkpoint(self, filepath: str, epoch: int):
         """Save training checkpoint."""
         model_config = {
             'input_size': self.model.input_size,
