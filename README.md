@@ -6,7 +6,7 @@
 
 **An advanced LSTM system that extracts pure sinusoidal frequencies from mixed, noisy signals through conditional regression**
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8-3.12](https://img.shields.io/badge/python-3.8--3.12-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -133,7 +133,7 @@ Input [5] → LSTM [64 hidden, 2 layers] → Dense [1] → Output [1]
 | **Dropout** | 0.2 | Regularization between layers |
 | **Optimizer** | Adam | Adaptive learning rate |
 | **Learning Rate** | 0.001 | Stable convergence |
-| **Batch Size** | 32 | Memory efficiency |
+| **Batch Size** | 30 | Memory efficiency |
 
 ### Critical Implementation Detail: State Management
 
@@ -169,28 +169,28 @@ for batch_input, target in data_loader:
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| **Train MSE** | 0.0422 | ✅ Excellent |
-| **Test MSE** | 0.0446 | ✅ Excellent |
-| **Generalization Gap** | 0.0024 | ✅ Very Good (<0.01) |
-| **Training Epochs** | 100 | Complete |
+| **Train MSE** | 0.0272 | ✅ Excellent |
+| **Test MSE** | 0.0355 | ✅ Excellent |
+| **Generalization Gap** | 0.0083 | ✅ Very Good (<0.01) |
+| **Training Epochs** | 200 | Complete |
 | **Total Parameters** | ~50K | Efficient |
 
 ### Generalization Success ✨
 
-The model achieves a generalization gap of only **0.0024**, well below the 0.01 threshold, indicating it has learned the fundamental frequency patterns rather than memorizing the training noise!
+The model achieves a generalization gap of only **0.0083**, well below the 0.01 threshold, indicating it has learned the fundamental frequency patterns rather than memorizing the training noise!
 
 ### Per-Frequency Performance (Test Set)
 
 | Frequency | MSE | MAE | Quality |
 |-----------|-----|-----|---------|
-| **f₁ = 1Hz** | 0.0471 | 0.1236 | ⭐⭐⭐⭐ |
-| **f₂ = 3Hz** | 0.0440 | 0.1114 | ⭐⭐⭐⭐⭐ |
-| **f₃ = 5Hz** | 0.0503 | 0.1251 | ⭐⭐⭐⭐ |
-| **f₄ = 7Hz** | 0.0370 | 0.1058 | ⭐⭐⭐⭐⭐ |
+| **f₁ = 1Hz** | 0.0589 | 0.1141 | ⭐⭐⭐⭐ |
+| **f₂ = 3Hz** | 0.0253 | 0.0811 | ⭐⭐⭐⭐⭐ |
+| **f₃ = 5Hz** | 0.0306 | 0.0881 | ⭐⭐⭐⭐⭐ |
+| **f₄ = 7Hz** | 0.0274 | 0.0790 | ⭐⭐⭐⭐⭐ |
 
 ![Per-Frequency Metrics](outputs/visualizations/13_per_frequency_metrics.png)
 
-**Observation**: Higher frequencies (f₄ = 7Hz) are extracted more accurately, likely because their faster oscillations provide more training examples per unit time.
+**Observation**: Higher frequencies (f₂, f₃, f₄) are extracted more accurately than the lowest frequency (f₁ = 1Hz), likely because their faster oscillations provide more training examples per unit time.
 
 ---
 
@@ -259,6 +259,20 @@ The spectrogram shows consistent frequency bands at the four target frequencies 
 
 ## 🚀 Usage
 
+### Prerequisites
+
+**⚠️ IMPORTANT: Python Version Requirements**
+
+This project requires **Python 3.8 - 3.12**. PyTorch is not compatible with Python 3.13+.
+
+```bash
+# Check your Python version
+python --version
+
+# Should output: Python 3.8.x, 3.9.x, 3.10.x, 3.11.x, or 3.12.x
+# If you have Python 3.13+, install an older version
+```
+
 ### Installation
 
 ```bash
@@ -266,12 +280,19 @@ The spectrogram shows consistent frequency bands at the four target frequencies 
 git clone <repository-url>
 cd lstm-frequency-filter-02
 
-# Create virtual environment
-python -m venv venv
+# Create virtual environment with compatible Python version
+python3.11 -m venv venv  # Use python3.8, 3.9, 3.10, 3.11, or 3.12
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Verify Python version in virtual environment
+python --version
 
 # Install dependencies
 pip install -r requirements.txt
+
+# (Optional) Setup environment variables
+cp .env.example .env
+# Edit .env to customize configuration
 ```
 
 ### Training
@@ -284,7 +305,7 @@ python train.py
 This will:
 1. ✅ Generate training and test datasets (seeds 11 and 42)
 2. ✅ Create PyTorch DataLoaders
-3. ✅ Train LSTM model for 100 epochs
+3. ✅ Train LSTM model for 200 epochs
 4. ✅ Generate all 14 visualization plots
 5. ✅ Save model checkpoints
 6. ✅ Create results summary JSON
@@ -312,7 +333,7 @@ train_data, test_data = create_train_test_datasets()
 
 # Create dataloaders
 train_loader, test_loader = create_dataloaders(
-    *train_data, *test_data, batch_size=32
+    *train_data, *test_data, batch_size=30
 )
 
 # Create and train model
@@ -320,7 +341,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = create_model(hidden_size=128, num_layers=3, device=device)
 
 trainer = LSTMTrainer(model, device, learning_rate=0.001)
-history = trainer.train(train_loader, test_loader, num_epochs=50)
+history = trainer.train(train_loader, test_loader, num_epochs=200)
 ```
 
 ---
@@ -368,7 +389,308 @@ The project includes comprehensive tests covering:
 - ✅ **Training Loop**: Loss computation, gradient handling, checkpointing
 - ✅ **Evaluation**: MSE calculation, prediction generation, per-frequency metrics
 
-**Test Coverage**: >85% of source code
+**Test Coverage**: **91.99%** verified (125 tests, all passing ✅)
+- **Platform**: Python 3.12.11
+- **Test Count**: 125 tests across 6 test modules
+- **Execution Time**: ~3 minutes
+- **Coverage Report**: `outputs/coverage/htmlcov/index.html`
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage report
+pytest tests/ --cov=src --cov-report=html
+
+# View coverage report
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
+start htmlcov/index.html  # Windows
+```
+
+See `docs/TESTING.md` for comprehensive testing documentation including edge cases and coverage details.
+
+---
+
+## ⚙️ Configuration
+
+The project uses YAML configuration files for all hyperparameters and settings.
+
+### Configuration Files
+
+- **`config/default.yaml`**: Default configuration for all parameters
+- **`config/experiment.yaml`**: Experimental configurations for testing
+- **`.env.example`**: Template for environment variables (not tracked in git)
+
+### Key Configuration Parameters
+
+```yaml
+# Model Architecture
+model:
+  hidden_size: 64
+  num_layers: 2
+  dropout: 0.2
+
+# Training Hyperparameters
+training:
+  num_epochs: 200
+  batch_size: 30
+  learning_rate: 0.001
+
+# Data Generation
+data:
+  train_seed: 11
+  test_seed: 42
+  frequencies: [1.0, 3.0, 5.0, 7.0]
+```
+
+### Using Custom Configuration
+
+```python
+from src.config import load_config
+
+# Load default config
+config = load_config()
+
+# Load with experimental overrides
+config = load_config(merge_experiment=True)
+
+# Access parameters
+hidden_size = config.get('model.hidden_size')
+learning_rate = config.get('training.learning_rate')
+```
+
+For complete configuration options, see `config/default.yaml` and the Configuration API in `docs/ARCHITECTURE.md`.
+
+---
+
+## 🔧 Troubleshooting
+
+### Installation Issues
+
+#### Problem: PyTorch installation fails
+**Solution:**
+```bash
+# Install PyTorch separately first (CPU version)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Then install remaining requirements
+pip install -r requirements.txt
+```
+
+#### Problem: Python version mismatch
+**Solution:**
+```bash
+# Check Python version (requires 3.8 - 3.12, NOT 3.13+)
+python --version
+
+# If you have Python 3.13+, PyTorch is not compatible
+# Install Python 3.11 or 3.12 and create virtual environment
+python3.11 -m venv venv  # or python3.12
+source venv/bin/activate
+
+# Verify correct version
+python --version  # Should show 3.8.x - 3.12.x
+```
+
+**Note**: Python 3.13+ is NOT compatible with PyTorch at this time. Use Python 3.8-3.12.
+
+#### Problem: Permission denied on venv creation
+**Solution:**
+```bash
+# On Unix/Mac, use sudo if needed
+sudo python -m venv venv
+
+# Or install in user directory
+python -m venv ~/lstm-venv
+source ~/lstm-venv/bin/activate
+```
+
+### Training Issues
+
+#### Problem: CUDA out of memory
+**Solution:**
+```bash
+# Force CPU usage
+export CUDA_VISIBLE_DEVICES=""
+python train.py
+
+# Or reduce batch size in config/default.yaml
+# training:
+#   batch_size: 16  # Instead of 32
+```
+
+#### Problem: Training very slow on CPU
+**Solution:**
+- Reduce `num_epochs` to 100 for faster iteration
+- Reduce `batch_size` to 16 (faster per-epoch, more epochs needed)
+- Use smaller `hidden_size` (32 instead of 64)
+- Consider cloud GPU (Google Colab, AWS, etc.)
+
+#### Problem: Loss not decreasing
+**Solution:**
+```bash
+# Check learning rate (may be too high or too low)
+# In config/default.yaml, try:
+# training:
+#   learning_rate: 0.0005  # If oscillating
+#   learning_rate: 0.002   # If too slow
+```
+
+#### Problem: Training diverges (loss → NaN)
+**Solution:**
+- Reduce learning rate to 0.0001
+- Check for data issues (run `pytest tests/test_data_generator.py`)
+- Enable gradient clipping (already enabled by default)
+
+### Testing Issues
+
+#### Problem: Tests fail with "command not found: pytest"
+**Solution:**
+```bash
+# Ensure virtual environment is activated
+source venv/bin/activate  # Unix/Mac
+venv\Scripts\activate     # Windows
+
+# Install pytest
+pip install pytest pytest-cov
+```
+
+#### Problem: Tests pass but coverage below 85%
+**Solution:**
+```bash
+# Generate detailed coverage report
+pytest tests/ --cov=src --cov-report=term-missing
+
+# Check which lines are not covered
+# Add tests for uncovered code paths
+```
+
+#### Problem: Import errors during testing
+**Solution:**
+```bash
+# Ensure you're in project root directory
+cd /path/to/lstm-noisy-signal-filter
+
+# Run tests from root
+pytest tests/
+
+# Or use absolute imports
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+```
+
+### Visualization Issues
+
+#### Problem: Plots not generated
+**Solution:**
+```bash
+# Check matplotlib backend
+import matplotlib
+print(matplotlib.get_backend())
+
+# If needed, set backend
+export MPLBACKEND=Agg  # For non-GUI environments
+python train.py
+```
+
+#### Problem: Low resolution visualizations
+**Solution:**
+- Edit `config/default.yaml`:
+```yaml
+visualization:
+  dpi: 600  # Increase from 300 for higher quality
+```
+
+#### Problem: Missing fonts in plots
+**Solution:**
+```bash
+# Install additional fonts (Ubuntu/Debian)
+sudo apt-get install fonts-liberation
+
+# Clear matplotlib cache
+rm -rf ~/.cache/matplotlib
+```
+
+### Data Issues
+
+#### Problem: Different results with same seed
+**Solution:**
+- Ensure PyTorch deterministic mode:
+```python
+import torch
+torch.use_deterministic_algorithms(True)
+```
+- Check NumPy version compatibility
+- Verify no CUDA randomness (use CPU for reproducibility)
+
+#### Problem: Dataset files not found
+**Solution:**
+```bash
+# Datasets are generated on first run
+# If missing, regenerate:
+python -c "from src.data.generator import create_train_test_datasets; create_train_test_datasets()"
+```
+
+### Performance Issues
+
+#### Problem: Model save/load errors
+**Solution:**
+```bash
+# Check file permissions
+ls -l outputs/models/
+
+# Ensure directory exists
+mkdir -p outputs/models
+
+# Try absolute path
+from pathlib import Path
+model_path = Path("/absolute/path/to/model.pth")
+```
+
+#### Problem: Results not matching documentation
+**Solution:**
+- Verify using same seeds (train=11, test=42)
+- Check configuration matches default.yaml
+- Ensure 200 epochs of training
+- Compare with baseline in `docs/EXPERIMENTS.md`
+
+### Common Error Messages
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `RuntimeError: CUDA error` | GPU issue | Use CPU: `device = torch.device('cpu')` |
+| `ValueError: too many values to unpack` | Data shape mismatch | Check DataLoader batch_size |
+| `KeyError: 'model_state_dict'` | Corrupted checkpoint | Delete and retrain |
+| `AssertionError in tests` | Logic error | Check test expectations match implementation |
+| `MemoryError` | Insufficient RAM | Reduce batch_size or model size |
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. **Check Documentation**:
+   - `docs/TESTING.md` - Testing details and edge cases
+   - `docs/ARCHITECTURE.md` - System architecture and APIs
+   - `docs/EXPERIMENTS.md` - Parameter sensitivity analysis
+
+2. **Review Code**:
+   - Source code has comprehensive docstrings
+   - Test files show expected usage patterns
+
+3. **Verify Environment**:
+   ```bash
+   python --version  # Should be 3.8-3.12 (NOT 3.13+)
+   pip list | grep torch  # Verify PyTorch installed
+   pytest tests/ -v  # All tests should pass
+   ```
+
+4. **Check Configuration**:
+   ```bash
+   cat config/default.yaml  # Review default settings
+   python -c "from src.config import load_config; c=load_config(); print(c.to_dict())"
+   ```
 
 ---
 
@@ -399,6 +721,33 @@ Using sequence length 1 is pedagogically valuable:
 - Teaches critical implementation details
 
 For production, L>1 (e.g., L=50) would be more efficient.
+
+---
+
+## 📖 Complete Documentation
+
+This project includes comprehensive documentation for all aspects:
+
+### Core Documentation
+- **[PRD.md](docs/PRD.md)** - Product Requirements Document with measurable KPIs
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture with C4 diagrams
+- **[ADR.md](docs/ADR.md)** - Architectural Decision Records (9 key decisions)
+
+### User Guides
+- **[CLI_USAGE_GUIDE.md](docs/CLI_USAGE_GUIDE.md)** - Complete CLI reference with examples
+- **[WORKFLOW_GUIDE.md](docs/WORKFLOW_GUIDE.md)** - Visual workflows and decision trees
+
+### Technical Documentation
+- **[TESTING.md](docs/TESTING.md)** - Testing strategy and edge cases
+- **[TEST_COVERAGE_REPORT.md](docs/TEST_COVERAGE_REPORT.md)** - Coverage analysis (93%)
+- **[EXPERIMENTS.md](docs/EXPERIMENTS.md)** - Parameter sensitivity analysis
+- **[EXTENSIBILITY.md](docs/EXTENSIBILITY.md)** - Plugin architecture guide
+
+### Quality Assurance
+- **[FINAL_QA_REPORT.md](docs/FINAL_QA_REPORT.md)** - Complete quality assessment
+- **[GRADE_IMPROVEMENTS_SUMMARY.md](docs/GRADE_IMPROVEMENTS_SUMMARY.md)** - Improvements log
+
+**Total:** 10 comprehensive documentation files, 5,500+ lines
 
 ---
 

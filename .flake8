@@ -1,0 +1,51 @@
+[flake8]
+# Maximum line length
+max-line-length = 100
+
+# Exclude directories
+exclude =
+    venv,
+    env,
+    ENV,
+    .venv,
+    __pycache__,
+    .git,
+    .pytest_cache,
+    .ipynb_checkpoints,
+    *.egg-info,
+    build,
+    dist,
+    outputs,
+    notebooks
+
+# Ignore specific errors
+ignore =
+    E203,  # Whitespace before ':' (conflicts with Black)
+    W503,  # Line break before binary operator (conflicts with Black)
+    E501,  # Line too long (handled by max-line-length)
+    W504   # Line break after binary operator
+
+# Maximum complexity for functions
+max-complexity = 10
+
+# Naming conventions
+inline-quotes = single
+docstring-convention = google
+
+# Per-file ignores
+per-file-ignores =
+    __init__.py:F401,F403
+    tests/*:F401,F403,F811
+
+# Show source code for each error
+show-source = True
+
+# Show error codes
+show-pep8 = True
+
+# Count errors
+count = True
+
+# Statistics at the end
+statistics = True
+

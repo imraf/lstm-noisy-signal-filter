@@ -1,324 +1,171 @@
 """Main training script for LSTM Frequency Filter.
 
-Orchestrates:
-1. Dataset generation
-2. Model training
-3. Evaluation
-4. Visualization generation
+Orchestrates the complete training and visualization pipeline.
 """
 
+import argparse
 import torch
-import numpy as np
-from pathlib import Path
 import json
+import yaml
+from pathlib import Path
 from datetime import datetime
 
-from src.data.generator import SignalGenerator, create_train_test_datasets
-from src.data.dataset import create_dataloaders, save_dataset
-from src.models.lstm_filter import create_model
-from src.training.trainer import LSTMTrainer
-from src.training.evaluator import ModelEvaluator, evaluate_model
-from src.visualization import signal_plots
-from src.visualization import model_plots
+from src.pipeline import execute_training_pipeline, generate_all_visualizations
+
+
+def parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Train LSTM Frequency Filter',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    parser.add_argument('--config', type=str, default=None,
+                        help='Path to YAML configuration file')
+    parser.add_argument('--epochs', type=int, default=100,
+                        help='Number of training epochs')
+    parser.add_argument('--batch-size', type=int, default=32,
+                        help='Training batch size')
+    parser.add_argument('--learning-rate', type=float, default=0.001,
+                        help='Learning rate')
+    parser.add_argument('--hidden-size', type=int, default=64,
+                        help='LSTM hidden size')
+    parser.add_argument('--num-layers', type=int, default=2,
+                        help='Number of LSTM layers')
+    parser.add_argument('--train-seed', type=int, default=11,
+                        help='Random seed for training data')
+    parser.add_argument('--test-seed', type=int, default=42,
+                        help='Random seed for test data')
+    parser.add_argument('--output-dir', type=str, default='outputs',
+                        help='Directory for outputs')
+    parser.add_argument('--device', type=str, default='auto',
+                        choices=['auto', 'cpu', 'cuda', 'mps'],
+                        help='Device to use for training')
+    parser.add_argument('--no-visualization', action='store_true',
+                        help='Skip visualization generation')
+    parser.add_argument('--frequencies', type=float, nargs='+', default=[1.0, 3.0, 5.0, 7.0],
+                        help='List of frequencies to extract')
+    
+    return parser.parse_args()
+
+
+def load_config(config_path: str):
+    """Load configuration from YAML file."""
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
+
+
+def merge_config_with_args(config: dict, args: argparse.Namespace):
+    """Merge CLI arguments with config file, prioritizing CLI args."""
+    if args.epochs is not None:
+        config.setdefault('training', {})['num_epochs'] = args.epochs
+    if args.batch_size is not None:
+        config.setdefault('training', {})['batch_size'] = args.batch_size
+    if args.learning_rate is not None:
+        config.setdefault('training', {})['learning_rate'] = args.learning_rate
+    if args.hidden_size is not None:
+        config.setdefault('model', {})['hidden_size'] = args.hidden_size
+    if args.num_layers is not None:
+        config.setdefault('model', {})['num_layers'] = args.num_layers
+    if args.train_seed is not None:
+        config.setdefault('data', {})['train_seed'] = args.train_seed
+    if args.test_seed is not None:
+        config.setdefault('data', {})['test_seed'] = args.test_seed
+    if args.frequencies is not None:
+        config.setdefault('data', {})['frequencies'] = args.frequencies
+    
+    return config
+
+
+def get_device(device_arg: str):
+    """Get device based on argument and availability."""
+    if device_arg == 'auto':
+        if torch.cuda.is_available():
+            return torch.device('cuda')
+        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            return torch.device('mps')
+        else:
+            return torch.device('cpu')
+    return torch.device(device_arg)
 
 
 def main():
     """Main execution function."""
+    args = parse_args()
     
     print("=" * 80)
     print("LSTM Frequency Filter - Training Pipeline")
     print("=" * 80)
     
-    # Configuration
-    TRAIN_SEED = 11
-    TEST_SEED = 42
-    FREQUENCIES = [1.0, 3.0, 5.0, 7.0]
+    if args.config:
+        print(f"\n[INFO] Loading configuration from: {args.config}")
+        config = load_config(args.config)
+        config = merge_config_with_args(config, args)
+        
+        TRAIN_SEED = config.get('data', {}).get('train_seed', 11)
+        TEST_SEED = config.get('data', {}).get('test_seed', 42)
+        FREQUENCIES = config.get('data', {}).get('frequencies', [1.0, 3.0, 5.0, 7.0])
+        HIDDEN_SIZE = config.get('model', {}).get('hidden_size', 64)
+        NUM_LAYERS = config.get('model', {}).get('num_layers', 2)
+        LEARNING_RATE = config.get('training', {}).get('learning_rate', 0.001)
+        BATCH_SIZE = config.get('training', {}).get('batch_size', 32)
+        NUM_EPOCHS = config.get('training', {}).get('num_epochs', 100)
+        output_dir = Path(config.get('output', {}).get('base_dir', args.output_dir))
+    else:
+        print("\n[INFO] Using command-line arguments (no config file)")
+        TRAIN_SEED = args.train_seed
+        TEST_SEED = args.test_seed
+        FREQUENCIES = args.frequencies
+        HIDDEN_SIZE = args.hidden_size
+        NUM_LAYERS = args.num_layers
+        LEARNING_RATE = args.learning_rate
+        BATCH_SIZE = args.batch_size
+        NUM_EPOCHS = args.epochs
+        output_dir = Path(args.output_dir)
     
-    HIDDEN_SIZE = 64
-    NUM_LAYERS = 2
-    LEARNING_RATE = 0.001
-    BATCH_SIZE = 32
-    NUM_EPOCHS = 100
+    output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Setup paths
-    output_dir = Path("outputs")
-    viz_dir = output_dir / "visualizations"
-    model_dir = output_dir / "models"
-    dataset_dir = output_dir / "datasets"
-    
-    for dir_path in [viz_dir, model_dir, dataset_dir]:
-        dir_path.mkdir(parents=True, exist_ok=True)
-    
-    # Device setup
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = get_device(args.device)
     print(f"\n[INFO] Using device: {device}")
     
-    # ========================================================================
-    # STEP 1: Generate Datasets
-    # ========================================================================
-    print("\n" + "=" * 80)
-    print("STEP 1: Generating Datasets")
-    print("=" * 80)
+    print(f"[INFO] Configuration:")
+    print(f"  - Epochs: {NUM_EPOCHS}")
+    print(f"  - Batch size: {BATCH_SIZE}")
+    print(f"  - Learning rate: {LEARNING_RATE}")
+    print(f"  - Hidden size: {HIDDEN_SIZE}")
+    print(f"  - Number of layers: {NUM_LAYERS}")
+    print(f"  - Frequencies: {FREQUENCIES}")
+    print(f"  - Train seed: {TRAIN_SEED}")
+    print(f"  - Test seed: {TEST_SEED}")
     
-    print(f"[INFO] Generating training data with seed {TRAIN_SEED}...")
-    print(f"[INFO] Generating test data with seed {TEST_SEED}...")
-    
-    train_data, test_data = create_train_test_datasets(
+    results = execute_training_pipeline(
         train_seed=TRAIN_SEED,
-        test_seed=TEST_SEED
-    )
-    
-    S_train, targets_train, one_hot_train = train_data
-    S_test, targets_test, one_hot_test = test_data
-    
-    print(f"[INFO] Training set: {len(targets_train)} samples")
-    print(f"[INFO] Test set: {len(targets_test)} samples")
-    
-    # Save datasets
-    save_dataset(S_train, targets_train, one_hot_train, 
-                dataset_dir / f"train_data_seed{TRAIN_SEED}.pt")
-    save_dataset(S_test, targets_test, one_hot_test, 
-                dataset_dir / f"test_data_seed{TEST_SEED}.pt")
-    print(f"[INFO] Datasets saved to {dataset_dir}")
-    
-    # Get time array and targets for visualization
-    gen = SignalGenerator(seed=TRAIN_SEED)
-    t = gen.get_time_array()
-    targets_matrix_train = gen.generate_pure_targets()
-    S_noisy_train = gen.generate_noisy_signal()
-    
-    gen_test = SignalGenerator(seed=TEST_SEED)
-    S_noisy_test = gen_test.generate_noisy_signal()
-    targets_matrix_test = gen_test.generate_pure_targets()
-    
-    # ========================================================================
-    # STEP 2: Create DataLoaders
-    # ========================================================================
-    print("\n" + "=" * 80)
-    print("STEP 2: Creating DataLoaders")
-    print("=" * 80)
-    
-    train_loader, test_loader = create_dataloaders(
-        S_train, targets_train, one_hot_train,
-        S_test, targets_test, one_hot_test,
-        batch_size=BATCH_SIZE,
-        shuffle_train=False  # CRITICAL: False for L=1 sequential training
-    )
-    
-    print(f"[INFO] Train batches: {len(train_loader)}")
-    print(f"[INFO] Test batches: {len(test_loader)}")
-    print(f"[INFO] Batch size: {BATCH_SIZE}")
-    
-    # ========================================================================
-    # STEP 3: Generate Signal Visualizations (Before Training)
-    # ========================================================================
-    print("\n" + "=" * 80)
-    print("STEP 3: Generating Signal Visualizations")
-    print("=" * 80)
-    
-    print("[INFO] Generating 00_complete_overview...")
-    signal_plots.plot_complete_overview(
-        t, FREQUENCIES, targets_matrix_train, S_noisy_train,
-        viz_dir / "00_complete_overview.png"
-    )
-    
-    print("[INFO] Generating 01_time_domain_signals...")
-    signal_plots.plot_time_domain_signals(
-        t, FREQUENCIES, targets_matrix_train, S_noisy_train,
-        viz_dir / "01_time_domain_signals.png",
-        time_window=(0, 2)
-    )
-    
-    print("[INFO] Generating 02_frequency_domain_fft...")
-    signal_plots.plot_frequency_domain_fft(
-        t, FREQUENCIES, targets_matrix_train, S_noisy_train,
-        viz_dir / "02_frequency_domain_fft.png"
-    )
-    
-    print("[INFO] Generating 03_spectrogram...")
-    signal_plots.plot_spectrogram(
-        t, S_noisy_train, FREQUENCIES,
-        viz_dir / "03_spectrogram.png"
-    )
-    
-    print("[INFO] Generating 04_overlay_signals...")
-    signal_plots.plot_overlay_signals(
-        t, FREQUENCIES, targets_matrix_train, S_noisy_train,
-        viz_dir / "04_overlay_signals.png"
-    )
-    
-    print("[INFO] Generating 05_training_samples...")
-    signal_plots.plot_training_samples(
-        S_train, targets_train, one_hot_train, FREQUENCIES,
-        viz_dir / "05_training_samples.png"
-    )
-    
-    print("[INFO] Generating 06_model_io_structure...")
-    model_plots.plot_model_io_structure(
-        viz_dir / "06_model_io_structure.png"
-    )
-    
-    # ========================================================================
-    # STEP 4: Create and Train Model
-    # ========================================================================
-    print("\n" + "=" * 80)
-    print("STEP 4: Training LSTM Model")
-    print("=" * 80)
-    
-    model = create_model(
-        input_size=5,
+        test_seed=TEST_SEED,
+        frequencies=FREQUENCIES,
         hidden_size=HIDDEN_SIZE,
         num_layers=NUM_LAYERS,
-        output_size=1,
-        dropout=0.2,
-        device=device
-    )
-    
-    print(f"[INFO] Model architecture:")
-    print(f"       - Input size: 5 [S(t), C1, C2, C3, C4]")
-    print(f"       - Hidden size: {HIDDEN_SIZE}")
-    print(f"       - Num layers: {NUM_LAYERS}")
-    print(f"       - Output size: 1")
-    print(f"       - Total parameters: {sum(p.numel() for p in model.parameters()):,}")
-    
-    trainer = LSTMTrainer(
-        model=model,
-        device=device,
-        learning_rate=LEARNING_RATE
-    )
-    
-    print(f"\n[INFO] Starting training for {NUM_EPOCHS} epochs...")
-    print(f"[INFO] Learning rate: {LEARNING_RATE}")
-    print("-" * 80)
-    
-    history = trainer.train(
-        train_loader=train_loader,
-        val_loader=test_loader,
+        learning_rate=LEARNING_RATE,
+        batch_size=BATCH_SIZE,
         num_epochs=NUM_EPOCHS,
-        save_path=str(model_dir),
-        save_every=20,
+        device=device,
+        save_dir=output_dir,
         verbose=True
     )
     
-    print("-" * 80)
-    print("[INFO] Training completed!")
-    
-    # Save final model
-    final_model_path = model_dir / f"lstm_l1_epoch{NUM_EPOCHS}_final.pth"
-    trainer.save_checkpoint(final_model_path, NUM_EPOCHS)
-    print(f"[INFO] Final model saved to {final_model_path}")
-    
-    # Plot training loss
-    print("\n[INFO] Generating 07_training_loss...")
-    model_plots.plot_training_loss(
-        history['train_loss'],
-        history['val_loss'],
-        viz_dir / "07_training_loss.png"
-    )
-    
-    # ========================================================================
-    # STEP 5: Evaluate Model
-    # ========================================================================
-    print("\n" + "=" * 80)
-    print("STEP 5: Evaluating Model")
-    print("=" * 80)
-    
-    evaluator = ModelEvaluator(model, device)
-    
-    # Overall metrics
-    print("[INFO] Computing overall metrics...")
-    train_mse = evaluator.compute_mse(train_loader)
-    test_mse = evaluator.compute_mse(test_loader)
-    
-    print(f"\n[RESULTS] Train MSE: {train_mse:.8f}")
-    print(f"[RESULTS] Test MSE:  {test_mse:.8f}")
-    print(f"[RESULTS] Generalization Gap: {abs(test_mse - train_mse):.8f}")
-    
-    if abs(test_mse - train_mse) < 0.01:
-        print("[SUCCESS] Model generalizes well! (Gap < 0.01)")
+    if not args.no_visualization:
+        generate_all_visualizations(
+            train_seed=TRAIN_SEED,
+            test_seed=TEST_SEED,
+            frequencies=FREQUENCIES,
+            results=results,
+            save_dir=output_dir,
+            verbose=True
+        )
     else:
-        print("[WARNING] Model may be overfitting or underfitting")
+        print("\n[INFO] Skipping visualization generation (--no-visualization flag)")
+        print(f"  - To generate visualizations later, run without --no-visualization")
     
-    # Per-frequency metrics
-    print("\n[INFO] Computing per-frequency metrics...")
-    train_freq_metrics = evaluator.evaluate_per_frequency(train_loader)
-    test_freq_metrics = evaluator.evaluate_per_frequency(test_loader)
-    
-    print("\nPer-Frequency Performance (Test Set):")
-    for i, freq in enumerate(FREQUENCIES):
-        metrics = test_freq_metrics[i]
-        print(f"  f{i+1}={freq}Hz: MSE={metrics['mse']:.8f}, MAE={metrics['mae']:.8f}")
-    
-    # Generate predictions
-    print("\n[INFO] Generating predictions for visualization...")
-    train_predictions, train_targets = evaluator.generate_predictions(train_loader)
-    test_predictions, test_targets = evaluator.generate_predictions(test_loader)
-    
-    # ========================================================================
-    # STEP 6: Generate Model Performance Visualizations
-    # ========================================================================
-    print("\n" + "=" * 80)
-    print("STEP 6: Generating Model Performance Visualizations")
-    print("=" * 80)
-    
-    # Extract predictions for frequency f2 (index 1)
-    samples_per_freq = 10000
-    freq_idx = 1  # f2 = 3Hz
-    start_idx = freq_idx * samples_per_freq
-    end_idx = start_idx + samples_per_freq
-    
-    test_pred_f2 = test_predictions[start_idx:end_idx]
-    test_target_f2 = test_targets[start_idx:end_idx]
-    
-    # Extract just the samples for this frequency from expanded S
-    S_test_samples = S_test[start_idx:end_idx]
-    
-    print("[INFO] Generating 08_predictions_vs_actual...")
-    model_plots.plot_predictions_vs_actual(
-        t, test_pred_f2, test_target_f2, S_noisy_test,
-        freq_idx, FREQUENCIES[freq_idx],
-        viz_dir / "08_predictions_vs_actual.png"
-    )
-    
-    print("[INFO] Generating 09_error_distribution...")
-    model_plots.plot_error_distribution(
-        test_predictions, test_targets, FREQUENCIES,
-        viz_dir / "09_error_distribution.png"
-    )
-    
-    print("[INFO] Generating 10_scatter_pred_vs_actual...")
-    model_plots.plot_scatter_pred_vs_actual(
-        test_predictions, test_targets, FREQUENCIES,
-        viz_dir / "10_scatter_pred_vs_actual.png"
-    )
-    
-    print("[INFO] Generating 11_frequency_spectrum_comparison...")
-    model_plots.plot_frequency_spectrum_comparison(
-        t, test_predictions, test_targets, FREQUENCIES,
-        viz_dir / "11_frequency_spectrum_comparison.png"
-    )
-    
-    print("[INFO] Generating 12_long_sequence_predictions...")
-    model_plots.plot_long_sequence_predictions(
-        t, test_predictions, test_targets, FREQUENCIES,
-        viz_dir / "12_long_sequence_predictions.png"
-    )
-    
-    print("[INFO] Generating 13_per_frequency_metrics...")
-    model_plots.plot_per_frequency_metrics(
-        test_freq_metrics, FREQUENCIES,
-        viz_dir / "13_per_frequency_metrics.png",
-        split_name="Test"
-    )
-    
-    # ========================================================================
-    # STEP 7: Save Results Summary
-    # ========================================================================
-    print("\n" + "=" * 80)
-    print("STEP 7: Saving Results Summary")
-    print("=" * 80)
-    
-    results = {
+    summary = {
         'timestamp': datetime.now().isoformat(),
         'configuration': {
             'train_seed': TRAIN_SEED,
@@ -331,44 +178,45 @@ def main():
             'num_epochs': NUM_EPOCHS
         },
         'metrics': {
-            'train_mse': float(train_mse),
-            'test_mse': float(test_mse),
-            'generalization_gap': float(abs(test_mse - train_mse)),
-            'generalizes_well': abs(test_mse - train_mse) < 0.01
+            'train_mse': float(results['train_mse']),
+            'test_mse': float(results['test_mse']),
+            'generalization_gap': float(abs(results['test_mse'] - results['train_mse'])),
+            'generalizes_well': abs(results['test_mse'] - results['train_mse']) < 0.01
         },
         'per_frequency': {
-            'train': {f'f{i+1}_{freq}Hz': train_freq_metrics[i] 
+            'train': {f'f{i+1}_{freq}Hz': results['train_freq_metrics'][i] 
                      for i, freq in enumerate(FREQUENCIES)},
-            'test': {f'f{i+1}_{freq}Hz': test_freq_metrics[i] 
+            'test': {f'f{i+1}_{freq}Hz': results['test_freq_metrics'][i] 
                     for i, freq in enumerate(FREQUENCIES)}
         }
     }
     
     results_file = output_dir / "results_summary.json"
     with open(results_file, 'w') as f:
-        json.dump(results, f, indent=2)
+        json.dump(summary, f, indent=2)
     
-    print(f"[INFO] Results summary saved to {results_file}")
-    
-    # ========================================================================
-    # Final Summary
-    # ========================================================================
     print("\n" + "=" * 80)
     print("TRAINING PIPELINE COMPLETED SUCCESSFULLY!")
     print("=" * 80)
     print(f"\n[SUMMARY]")
     print(f"  - Trained for {NUM_EPOCHS} epochs")
-    print(f"  - Final Train MSE: {train_mse:.8f}")
-    print(f"  - Final Test MSE: {test_mse:.8f}")
-    print(f"  - Generated 14 visualization plots")
-    print(f"  - Model saved to: {model_dir}")
-    print(f"  - Visualizations saved to: {viz_dir}")
+    print(f"  - Final Train MSE: {results['train_mse']:.8f}")
+    print(f"  - Final Test MSE: {results['test_mse']:.8f}")
+    if not args.no_visualization:
+        print(f"  - Generated 14 visualization plots")
+    print(f"  - Model saved to: {output_dir}/models")
+    if not args.no_visualization:
+        print(f"  - Visualizations saved to: {output_dir}/visualizations")
     print(f"  - Results saved to: {results_file}")
     print(f"\n[NEXT STEPS]")
-    print(f"  1. Review visualizations in {viz_dir}")
-    print(f"  2. Check results_summary.json for detailed metrics")
-    print(f"  3. Run tests: pytest tests/ --cov=src")
-    print(f"  4. Generate README.md with visualizations")
+    if not args.no_visualization:
+        print(f"  1. Review visualizations in {output_dir}/visualizations")
+        print(f"  2. Check results_summary.json for detailed metrics")
+        print(f"  3. Run tests: pytest tests/ --cov=src")
+    else:
+        print(f"  1. Check results_summary.json for detailed metrics")
+        print(f"  2. Run tests: pytest tests/ --cov=src")
+        print(f"  3. Generate visualizations: python train.py --config {args.config or 'config/default.yaml'}")
     print("\n" + "=" * 80)
 
 

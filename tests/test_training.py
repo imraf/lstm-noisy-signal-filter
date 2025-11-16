@@ -71,7 +71,7 @@ class TestLSTMTrainer:
         """Test validation method."""
         trainer, _, test_loader, _ = setup_training
         
-        val_loss = trainer.validate(test_loader)
+        val_loss = trainer.validator.validate(test_loader)
         
         assert isinstance(val_loss, float)
         assert val_loss > 0
