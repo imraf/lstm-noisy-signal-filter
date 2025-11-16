@@ -133,7 +133,7 @@ Input [5] → LSTM [64 hidden, 2 layers] → Dense [1] → Output [1]
 | **Dropout** | 0.2 | Regularization between layers |
 | **Optimizer** | Adam | Adaptive learning rate |
 | **Learning Rate** | 0.001 | Stable convergence |
-| **Batch Size** | 32 | Memory efficiency |
+| **Batch Size** | 30 | Memory efficiency |
 
 ### Critical Implementation Detail: State Management
 
@@ -169,28 +169,28 @@ for batch_input, target in data_loader:
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| **Train MSE** | 0.0422 | ✅ Excellent |
-| **Test MSE** | 0.0446 | ✅ Excellent |
-| **Generalization Gap** | 0.0024 | ✅ Very Good (<0.01) |
-| **Training Epochs** | 100 | Complete |
+| **Train MSE** | 0.0272 | ✅ Excellent |
+| **Test MSE** | 0.0355 | ✅ Excellent |
+| **Generalization Gap** | 0.0083 | ✅ Very Good (<0.01) |
+| **Training Epochs** | 200 | Complete |
 | **Total Parameters** | ~50K | Efficient |
 
 ### Generalization Success ✨
 
-The model achieves a generalization gap of only **0.0024**, well below the 0.01 threshold, indicating it has learned the fundamental frequency patterns rather than memorizing the training noise!
+The model achieves a generalization gap of only **0.0083**, well below the 0.01 threshold, indicating it has learned the fundamental frequency patterns rather than memorizing the training noise!
 
 ### Per-Frequency Performance (Test Set)
 
 | Frequency | MSE | MAE | Quality |
 |-----------|-----|-----|---------|
-| **f₁ = 1Hz** | 0.0471 | 0.1236 | ⭐⭐⭐⭐ |
-| **f₂ = 3Hz** | 0.0440 | 0.1114 | ⭐⭐⭐⭐⭐ |
-| **f₃ = 5Hz** | 0.0503 | 0.1251 | ⭐⭐⭐⭐ |
-| **f₄ = 7Hz** | 0.0370 | 0.1058 | ⭐⭐⭐⭐⭐ |
+| **f₁ = 1Hz** | 0.0589 | 0.1141 | ⭐⭐⭐⭐ |
+| **f₂ = 3Hz** | 0.0253 | 0.0811 | ⭐⭐⭐⭐⭐ |
+| **f₃ = 5Hz** | 0.0306 | 0.0881 | ⭐⭐⭐⭐⭐ |
+| **f₄ = 7Hz** | 0.0274 | 0.0790 | ⭐⭐⭐⭐⭐ |
 
 ![Per-Frequency Metrics](outputs/visualizations/13_per_frequency_metrics.png)
 
-**Observation**: Higher frequencies (f₄ = 7Hz) are extracted more accurately, likely because their faster oscillations provide more training examples per unit time.
+**Observation**: Higher frequencies (f₂, f₃, f₄) are extracted more accurately than the lowest frequency (f₁ = 1Hz), likely because their faster oscillations provide more training examples per unit time.
 
 ---
 
@@ -305,7 +305,7 @@ python train.py
 This will:
 1. ✅ Generate training and test datasets (seeds 11 and 42)
 2. ✅ Create PyTorch DataLoaders
-3. ✅ Train LSTM model for 100 epochs
+3. ✅ Train LSTM model for 200 epochs
 4. ✅ Generate all 14 visualization plots
 5. ✅ Save model checkpoints
 6. ✅ Create results summary JSON
@@ -333,7 +333,7 @@ train_data, test_data = create_train_test_datasets()
 
 # Create dataloaders
 train_loader, test_loader = create_dataloaders(
-    *train_data, *test_data, batch_size=32
+    *train_data, *test_data, batch_size=30
 )
 
 # Create and train model
@@ -341,7 +341,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = create_model(hidden_size=128, num_layers=3, device=device)
 
 trainer = LSTMTrainer(model, device, learning_rate=0.001)
-history = trainer.train(train_loader, test_loader, num_epochs=50)
+history = trainer.train(train_loader, test_loader, num_epochs=200)
 ```
 
 ---
@@ -435,8 +435,8 @@ model:
 
 # Training Hyperparameters
 training:
-  num_epochs: 100
-  batch_size: 32
+  num_epochs: 200
+  batch_size: 30
   learning_rate: 0.001
 
 # Data Generation
@@ -524,7 +524,7 @@ python train.py
 
 #### Problem: Training very slow on CPU
 **Solution:**
-- Reduce `num_epochs` to 50 for faster iteration
+- Reduce `num_epochs` to 100 for faster iteration
 - Reduce `batch_size` to 16 (faster per-epoch, more epochs needed)
 - Use smaller `hidden_size` (32 instead of 64)
 - Consider cloud GPU (Google Colab, AWS, etc.)
@@ -653,7 +653,7 @@ model_path = Path("/absolute/path/to/model.pth")
 **Solution:**
 - Verify using same seeds (train=11, test=42)
 - Check configuration matches default.yaml
-- Ensure 100 epochs of training
+- Ensure 200 epochs of training
 - Compare with baseline in `docs/EXPERIMENTS.md`
 
 ### Common Error Messages

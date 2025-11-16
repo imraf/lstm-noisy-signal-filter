@@ -94,5 +94,5 @@ def load_dataset(filepath: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         targets: Pure targets [40000]
         one_hot: One-hot vectors [40000, 4]
     """
-    data = torch.load(filepath)
+    data = torch.load(filepath, weights_only=False)
     return data['S'], data['targets'], data['one_hot']

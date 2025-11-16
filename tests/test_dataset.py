@@ -46,7 +46,7 @@ class TestFrequencyDataset:
         input_sample, _ = dataset[0]
         
         # First element should be S(t)
-        assert torch.isclose(input_sample[0, 0], torch.tensor(S[0]), atol=1e-5)
+        assert torch.isclose(input_sample[0, 0], torch.tensor(S[0], dtype=torch.float32), atol=1e-5)
         
         # Next 4 elements should be one-hot vector
         try:
@@ -81,7 +81,7 @@ class TestFrequencyDataset:
         
         for i in range(10):  # Check first 10 samples
             _, target_sample = dataset[i]
-            assert torch.isclose(target_sample[0], torch.tensor(targets[i]), atol=1e-5)
+            assert torch.isclose(target_sample[0], torch.tensor(targets[i], dtype=torch.float32), atol=1e-5)
     
     def test_get_by_frequency(self, sample_data):
         """Test extracting samples for specific frequency."""

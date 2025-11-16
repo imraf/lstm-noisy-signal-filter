@@ -2,8 +2,10 @@
 venv/
 env/
 ENV/
+.venv/
 
 # Python
+=======
 *.pyc
 *.pyo
 *.pyd
